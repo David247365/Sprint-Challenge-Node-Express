@@ -18,7 +18,7 @@ server.use(express.json());
 
 // Get all projects
 
-server.get("/", (req, res) => {
+server.get("/api/projects", (req, res) => {
   projectM
     .get()
     .then(projects => {
@@ -33,12 +33,12 @@ server.get("/", (req, res) => {
 
 // Get projects by id
 
-server.get("/:id", (req, res) => {
+server.get("/api/projects/:id", (req, res) => {
   const { id } = req.params;
   projectM
-    .getProjectActions(id)
+    .get(id)
     .then(project => {
-      if (project.length) {
+      if (project) {
         res.status(200).json(project);
       } else {
         res
@@ -53,9 +53,23 @@ server.get("/:id", (req, res) => {
     });
 });
 
+// Get actions for specified id
+
+server.get("/api/projects/:id/actions", (req, res) => {
+  const { id } = req.params;
+  projectM
+    .getProjectActions(id)
+    .then(project => {
+      res.status(200).json(project);
+    })
+    .catch(err => {
+      res.status(500).json({ message: "There was an error" });
+    });
+});
+
 // Add a new Project
 
-server.post("/", (req, res) => {
+server.post("/api/projects", (req, res) => {
   const { name, description } = req.body;
   if (!name || !description) {
     res.status(400).json("Please provide both name and description");
@@ -80,7 +94,7 @@ server.post("/", (req, res) => {
 
 // PUT a project
 
-server.put("/:id", (req, res) => {
+server.put("/api/projects/:id", (req, res) => {
   const { id } = req.params;
   const { name, description } = req.body;
   if (!name || !description) {
@@ -106,7 +120,7 @@ server.put("/:id", (req, res) => {
 
 // Delete a post
 
-server.delete("/:id", (req, res) => {
+server.delete("/api/projects/:id", (req, res) => {
   const { id } = req.params;
   projectM
     .remove(id)
@@ -116,23 +130,24 @@ server.delete("/:id", (req, res) => {
           .status(404)
           .json({ message: "The post with the specified Id does not exist" });
       } else {
-        res.status(200).json(count);
+        res.status(200).json({ message: `Deleted project with id:${id}` });
       }
     })
     .catch(err => {
-      res
-        .status(500)
-        .json({
-          message: "There was an error deleting the post, please try again"
-        });
+      res.status(500).json({
+        message: "There was an error deleting the post, please try again"
+      });
     });
 });
 
 // ============== Action Endpoints ==========
 
-server.get("/actions", (req, res) => {
+// get actions for specific id
+
+server.get("api/actions/:id", (req, res) => {
+  const { id } = req.params;
   actions
-    .get()
+    .get(id)
     .then(action => {
       res.status(200).json(action);
     })
@@ -140,6 +155,84 @@ server.get("/actions", (req, res) => {
       res
         .status(500)
         .json({ message: "There was an error retrieving actions" });
+    });
+});
+
+// Post a new action
+
+server.post("/api/actions", (req, res) => {
+  const action = req.body;
+  if (!action.project_id || !action.description || !action.notes) {
+    res
+      .status(400)
+      .json("Please provide a project id, a description, and notes");
+  } else if (action.description.length > 5) {
+    res
+      .status(400)
+      .json({ message: "Name can not be longer than 128 characters" });
+  } else {
+    actions
+      .insert(action)
+      .then(action => {
+        res.status(201).json(action);
+      })
+      .catch(err => {
+        res.status(500).json({
+          message:
+            "There was an error creating the project, please try again later"
+        });
+      });
+  }
+});
+
+// Put an action
+
+server.put("/api/actions/:id", (req, res) => {
+  const { id } = req.params;
+  const action = req.body;
+  if (!action.project_id || !action.description || !action.notes) {
+    res
+      .status(400)
+      .json("Please provide a project id, a description, and notes");
+  } else if (action.description.length > 128) {
+    res
+      .status(400)
+      .json({ message: "Name can not be longer than 128 characters" });
+  } else {
+    actions
+      .update(id, action)
+      .then(action => {
+        res.status(201).json(action);
+      })
+      .catch(err => {
+        res.status(500).json({
+          message:
+            "There was an error creating the project, please try again later"
+        });
+      });
+  }
+});
+
+// Delete actions
+
+server.delete("/api/actions/:id", (req, res) => {
+  const { id } = req.params;
+  actions
+    .remove(id)
+    .then(action => {
+      if (action) {
+        res.status(200).json({ message: `Deleted action with id:${id}` });
+      } else {
+        res
+          .status(404)
+          .json({ message: "Action with specified Id does not exist" });
+      }
+    })
+    .catch(err => {
+      res.status(500).json({
+        message:
+          "There was an error deleting the action, please try again later"
+      });
     });
 });
 
