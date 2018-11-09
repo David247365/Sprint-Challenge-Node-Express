@@ -36,13 +36,13 @@ server.get("/", (req, res) => {
 server.get("/:id", (req, res) => {
   const { id } = req.params;
   projectM
-    .get(id)
+    .getProjectActions(id)
     .then(project => {
       if (project.length) {
         res.status(200).json(project);
       } else {
         res
-          .status(400)
+          .status(404)
           .json({ message: "The project with that Id does not exist" });
       }
     })
@@ -51,6 +51,31 @@ server.get("/:id", (req, res) => {
         message: "There was an error retirving that project, please try again"
       });
     });
+});
+
+// Add a new Project
+
+server.post("/", (req, res) => {
+  const { name, description } = req.body;
+  if (!name || !description) {
+    res.status(400).json("Please provide both name and description");
+  } else if (name.length > 128) {
+    res
+      .status(400)
+      .json({ message: "Name can not be longer than 128 characters" });
+  } else {
+    projectM
+      .insert(req.body)
+      .then(project => {
+        res.status(201).json(project);
+      })
+      .catch(err => {
+        res.status(500).json({
+          message:
+            "There was an error creating the project, please try again later"
+        });
+      });
+  }
 });
 
 // ============== Action Endpoints ==========
