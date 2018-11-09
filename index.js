@@ -78,6 +78,56 @@ server.post("/", (req, res) => {
   }
 });
 
+// PUT a project
+
+server.put("/:id", (req, res) => {
+  const { id } = req.params;
+  const { name, description } = req.body;
+  if (!name || !description) {
+    res.status(400).json("Please provide both name and description");
+  } else if (name.length > 128) {
+    res
+      .status(400)
+      .json({ message: "Name can not be longer than 128 characters" });
+  } else {
+    projectM
+      .update(id, req.body)
+      .then(project => {
+        res.status(201).json(req.body);
+      })
+      .catch(err => {
+        res.status(500).json({
+          message:
+            "There was an error creating the project, please try again later"
+        });
+      });
+  }
+});
+
+// Delete a post
+
+server.delete("/:id", (req, res) => {
+  const { id } = req.params;
+  projectM
+    .remove(id)
+    .then(project => {
+      if (project === 0) {
+        res
+          .status(404)
+          .json({ message: "The post with the specified Id does not exist" });
+      } else {
+        res.status(200).json(count);
+      }
+    })
+    .catch(err => {
+      res
+        .status(500)
+        .json({
+          message: "There was an error deleting the post, please try again"
+        });
+    });
+});
+
 // ============== Action Endpoints ==========
 
 server.get("/actions", (req, res) => {
